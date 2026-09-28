@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TradePro — Paper Trading Demo</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>TradePro</div>
+    <div class="badge">PAPER TRADING &middot; NO REAL MONEY</div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <h1>Algorithmic paper-trading demo</h1>
+      <p>
+        A real SMA(10)/SMA(30) crossover strategy evaluated against live daily
+        price data for <strong>AAPL, MSFT, TSLA, NVDA</strong> and
+        <strong>SPY</strong>. When the fast average crosses the slow average,
+        the engine opens or closes a simulated position, sized as a fraction
+        of cash, and logs it below. No real money moves — this account started
+        at $100,000 in simulated cash and every trade you see is computed,
+        not scripted.
+      </p>
+    </section>
+
+    <section class="stats">
+      <div class="stat-card">
+        <span class="stat-label">Equity</span>
+        <span class="stat-value" id="stat-equity">—</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Cash</span>
+        <span class="stat-value" id="stat-cash">—</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Unrealized P&amp;L</span>
+        <span class="stat-value" id="stat-unrealized">—</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Realized P&amp;L (total)</span>
+        <span class="stat-value" id="stat-realized">—</span>
+      </div>
+    </section>
+
+    <section class="run-row">
+      <button id="run-btn" class="run-btn">Evaluate strategy now</button>
+      <button id="refresh-btn" class="ghost-btn">Refresh</button>
+      <span id="run-status" class="run-status"></span>
+    </section>
+
+    <section class="panel">
+      <h2>Open positions</h2>
+      <table class="data-table" id="positions-table">
+        <thead>
+          <tr><th>Symbol</th><th>Qty</th><th>Entry</th><th>Mark</th><th>Unrealized P&amp;L</th></tr>
+        </thead>
+        <tbody id="positions-body">
+          <tr><td colspan="5" class="empty">No open positions.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>Trade log</h2>
+      <table class="data-table" id="trades-table">
+        <thead>
+          <tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>P&amp;L</th><th>Reason</th></tr>
+        </thead>
+        <tbody id="trades-body">
+          <tr><td colspan="7" class="empty">No trades yet — evaluate the strategy to generate the first signal.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel output-panel" id="output-section" hidden>
+      <h2>Last run output</h2>
+      <pre id="output-body"></pre>
+    </section>
+  </main>
+
+  <footer>
+    Built by Syed Kumail Rizvi. Strategy runs on a daily Vercel Cron job and
+    can also be triggered manually above. Market data via Yahoo Finance's
+    public chart API. This is a demo account — nothing here places real
+    trades or moves real money.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
