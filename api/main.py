@@ -16,9 +16,15 @@ dashboard has genuine history across runs. This is a paper-trading demo
 """
 
 import os
+import sys
 import time
 import traceback
 from datetime import datetime, timezone
+
+# Vercel's Python runtime doesn't always put this file's own directory on
+# sys.path before importing it, which breaks the sibling `indicators`/
+# `market` imports below. Force it explicitly.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import requests
 from flask import Flask, jsonify, request
@@ -27,6 +33,16 @@ import indicators as ind
 import market as mkt
 
 app = Flask(__name__)
+
+
+def _json_error(exc):
+    traceback.print_exc()
+    return jsonify({"error": str(exc), "type": type(exc).__name__}), 500
+
+
+@app.errorhandler(Exception)
+def handle_any_error(exc):
+    return _json_error(exc)
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://gxjyjvqgdmtxipqpgisl.supabase.co")
 SUPABASE_ANON_KEY = os.environ.get(
