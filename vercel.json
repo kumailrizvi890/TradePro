@@ -8,6 +8,9 @@
     { "src": "/", "dest": "/public/index.html" },
     { "src": "/(.*)", "dest": "/public/$1" }
   ],
+  "functions": {
+    "api/main.py": { "maxDuration": 30 }
+  },
   "crons": [
     { "path": "/api/cron", "schedule": "30 14 * * 1-5" }
   ]
