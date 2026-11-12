@@ -100,12 +100,9 @@ def fetch_quote(symbol):
 
 
 def fetch_quotes_parallel(symbols, max_workers=10):
-    """Fetch latest quotes for several symbols at once, in watchlist order."""
+    """Fetch latest quotes for several symbols at once, keyed by symbol."""
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as ex:
-        return sorted(
-            (q for q in ex.map(fetch_quote, symbols) if q),
-            key=lambda q: WATCHLIST_SYMBOLS.index(q["symbol"]) if q["symbol"] in WATCHLIST_SYMBOLS else 99,
-        )
+        return {q["symbol"]: q for q in ex.map(fetch_quote, symbols) if q}
 
 
 def fetch_daily(symbol, days=260):
