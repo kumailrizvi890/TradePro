@@ -1,5 +1,7 @@
 # TradePro
 
+[![CI](https://github.com/kumailrizvi890/TradePro/actions/workflows/ci.yml/badge.svg)](https://github.com/kumailrizvi890/TradePro/actions/workflows/ci.yml)
+
 TradePro is an algorithmic trading terminal — a real, working demo that charts live market data, scores trade setups, and runs paper trading, with trades and equity snapshots persisted to Supabase.
 
 ## What it does
