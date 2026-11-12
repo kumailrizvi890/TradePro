@@ -4,10 +4,10 @@ TradePro is an algorithmic trading terminal — a real, working demo that charts
 
 ## What it does
 
-- **25-symbol watchlist** covering crypto and US equities, with a terminal-style interface in `public/`.
-- **Real candlestick charts** built with TradingView's lightweight-charts library, with SMA overlays, a volume pane, and a live RSI subplot.
+- **25-symbol watchlist** covering crypto and US equities, with a green-on-dark terminal interface in `public/`.
+- **Real candlestick charts** built with TradingView's lightweight-charts library, with SMA 20/50 overlays, a volume pane, a live RSI 14 subplot, and 1D/1W/1M timeframes.
 - **Technical analysis in Python**: the Flask backend in `api/` computes indicators (including SMA and RSI) and an 8-factor technical confluence gate that scores setups before a trade is suggested.
-- **Manual order ticket** with risk-based position sizing using ATR-based stops.
+- **Manual order ticket** with risk-based position sizing using real ATR(14) stops: the protective stop sits at 2x ATR and the quantity follows from your risk dollars (shares = risk $ / stop distance).
 - **SMA-crossover paper-trading engine** for backtesting-style simulated trades.
 - **Market data from Yahoo Finance**, including daily closes for symbols such as AAPL, MSFT, TSLA, NVDA, and SPY.
 - **Persistence in Supabase**: trades and equity snapshots are stored so a portfolio can be reviewed across sessions.
@@ -18,11 +18,13 @@ TradePro is an algorithmic trading terminal — a real, working demo that charts
 - Frontend: HTML/CSS/JavaScript in `public/`, TradingView lightweight-charts
 - Data: Yahoo Finance market data, Supabase for persistence
 - Deployment: Vercel (`vercel.json`)
+- CI: GitHub Actions (`.github/workflows/ci.yml`) runs a compile check on the Python sources and the offline unit tests in `tests/` on every push to main.
 
 ## How to run it
 
 ```bash
 pip install -r requirements.txt
+python -m unittest discover -s tests -v
 ```
 
 Deploy the repository on Vercel (the included `vercel.json` wires up the Flask backend in `api/` and the static terminal in `public/`), or run the Flask app locally from `api/` after installing the requirements.
