@@ -421,7 +421,7 @@ function renderTrades(trades) {
   body.innerHTML = rows.map((t) => {
     const pnl = t.pnl != null ? t.pnl : t.realized_pnl;
     return `<tr><td>${fmtWhen(t.time || t.created_at)}</td><td><strong>${t.symbol}</strong></td>` +
-      `<td class="${t.side === "buy" ? "positive" : "negative}${(t.side || "").toUpperCase()}</td>` +
+      `<td class="${t.side === "buy" ? "positive" : "negative"}">${(t.side || "").toUpperCase()}</td>` +
     `<td>${fmtQty(t.qty)}</td><td>${fmtPrice(t.price)}</td>` +
       `<td class="${pnlClass(pnl)}">${fmtSigned(pnl)}</td><td>${t.reason || t.strategy || ""}</td></tr>`;
   }).join("");
