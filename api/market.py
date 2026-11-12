@@ -30,96 +30,86 @@ INTERVAL_MAP = {
     "4H": {"interval": "60m", "range": "3mo"},  # resampled x4 after fetch
     "1D": {"interval": "1d", "range": "6mo"},
     "1W": {"interval": "1wk", "range": "2y"},
+    "1M": {"interval": "1mo", "range": "5y"},
 }
 
 
 def fetch_ohlc(symbol, timeframe="1D"):
     """Return a list of {t,o,h,l,c,v} bars, oldest first, or None on failure."""
-    cfg = INTERVAL_MAP.get(timeframe, INTERVAL_MAP["1D"])
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
-    try:
-        resp = requests.get(
-            url,
-            params={"range": cfg["range"], "interval": cfg["interval"]},
-            headers=HEADERS,
-            timeout=REQUEST_TIMEOUT,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        result = data["chart"]["result"][0]
-        ts = result["timestamp"]
-        quote = result["indicators"]["quote"][0]
-        bars = []
-        for i, t in enumerate(ts):
-            o, h, l, c, v = (quote["open"][i], quote["high"][i], quote["low"][i],
-                              quote["close"][i], quote["volume"][i])
-            if None in (o, h, l, c):
+    m = INTERVAL_MAP.get(timeframe, INTERVAL_MAP["1D"])
+    params = {
+        "interval": m["interval"],
+        "range": m["range"],
+        "includePrePost": "false",
+        "events": "div,split",
+    }
+    r = requests.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}", params=params, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+    r.raise_for_status()
+    res = r.json()["chart"]["result"][0]
+    ts = res["timestamp"]
+    q = res["indicators"]["quote"][0]
+    bars = [
+        {
+            "t": t * 1000,
+            "o": o,
+            "h": h,
+            "l": l,
+            "c": c,
+            "v": v or 0,
+        }
+        for t, o, h, l, c, v in zip(ts, q["open"], q["high"], q["low"], q["close"], q.get("volume") or [0] * len(ts))
+        if o is not None and c is not None
+    ]
+    if timeframe == "4H":
+        agg = []
+        for i in range(0, len(bars), 4):
+            chunk = bars[i:i + 4]
+            if len(chunk) < 4 and len(bars) - i < 2:
+                agg.extend(chunk)
                 continue
-            bars.append({"t": t * 1000, "o": o, "h": h, "l": l, "c": c, "v": v or 0})
-        if timeframe == "4H":
-            bars = _resample(bars, 4)
-        return bars
-    except Exception:
-        return None
-
-
-def _resample(bars, factor):
-    out = []
-    for i in range(0, len(bars) - factor + 1, factor):
-        chunk = bars[i:i + factor]
-        out.append({
-            "t": chunk[0]["t"],
-            "o": chunk[0]["o"],
-            "h": max(b["h"] for b in chunk),
-            "l": min(b["l"] for b in chunk),
-            "c": chunk[-1]["c"],
-            "v": sum(b["v"] for b in chunk),
-        })
-    return out
-
-
-def fetch_daily(symbol, days=260):
-    """Daily bars used for indicator/signal computation, independent of
-    whatever timeframe the chart itself is displaying."""
-    bars = fetch_ohlc(symbol, "1D")
-    if not bars:
-        return None
-    return bars[-days:]
+            agg.append({
+                "t": chunk[0]["t"],
+                "o": chunk[0]["o"],
+                "h": max(c["h"] for c in chunk),
+                "l": min(c["l"] for c in chunk),
+                "c": chunk[-1]["c"],
+                "v": sum(c["v"] for c in chunk),
+            })
+        bars = agg
+    return bars
 
 
 def fetch_quote(symbol):
-    """Return {symbol, price, change_pct} from the last two daily closes."""
-    bars = fetch_ohlc(symbol, "1D")
-    if not bars or len(bars) < 2:
+    """Return latest quote for *symbol* with both magnitudes of change."""
+    daily = fetch_ohlc(symbol, "1D")
+    if not daily or len(daily) < 2:
         return None
-    price = bars[-1]["c"]
-    prev = bars[-2]["c"]
-    change_pct = (price - prev) / prev * 100 if prev else 0.0
-    return {"symbol": symbol, "price": price, "change_pct": round(change_pct, 2)}
+    last, prev = daily[-1], daily[-2]
+    is_crypto = symbol.endswith("-USD")
+    if is_crypto:
+        price = last["c"]
+        chg = price - prev["c"]
+        chg_pct = (chg / prev["c"]) * 100 if prev["c"] else None
+    else:
+        price = last["c"]
+        chg = price - prev["c"]
+        chg_pct = (chg / prev["c"]) * 100 if prev["c"] else None
+    return {
+        "symbol": symbol,
+        "price": round(price, 6),
+        "change": round(chg, 6),
+        "change_pct": round(chg_pct, 4) if chg_pct is not None else None,
+    }
 
 
-def fetch_quotes_parallel(symbols, max_workers=10):
-    """Fetch several quotes concurrently. Returns {symbol: quote-or-None}."""
-    out = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = {pool.submit(fetch_quote, s): s for s in symbols}
-        for fut in concurrent.futures.as_completed(futures):
-            symbol = futures[fut]
-            try:
-                out[symbol] = fut.result()
-            except Exception:
-                out[symbol] = None
-    return out
+def fetch_quotes(symbols):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
+        return sorted(
+            (q for q in ex.map(fetch_quote, symbols) if q),
+            key=lambda q: WATCHLIST_SYMBOLS.index(q["symbol"]) if q["symbol"] in WATCHLIST_SYMBOLS else 99,
+        )
 
 
-def fetch_daily_parallel(symbols, days=260, max_workers=8):
-    out = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = {pool.submit(fetch_daily, s, days): s for s in symbols}
-        for fut in concurrent.futures.as_completed(futures):
-            symbol = futures[fut]
-            try:
-                out[symbol] = fut.result()
-            except Exception:
-                out[symbol] = None
-    return out
+def fetch_daily(symbol):
+    """Return daily OHLC bars used by the strategy engine."""
+    return fetch_ohlc(symbol, "1D")
