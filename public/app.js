@@ -403,8 +403,8 @@ function renderPositions(positions) {
     return;
   }
   body.innerHTML = positions.map((p) => {
-    const pnl = p.mark_price != null ? (p.mark_price - p.entry_price) * p.quantity : null;
-    return `<tr><td><strong>${p.symbol}</strong></td><td>${fmtQty(p.quantity)}</td><td>${fmtPrice(p.entry_price)}</td>` +
+    const pnl = p.mark_price != null ? (p.mark_price - p.entry_price) * p.qty : null;
+    return `<tr><td><strong>${p.symbol}</strong></td><td>${fmtQty(p.qty)}</td><td>${fmtPrice(p.entry_price)}</td>` +
       `<td>${fmtPrice(p.mark_price)}</td><td>${fmtPrice(p.stop_loss)}</td><td>${fmtPrice(p.take_profit)}</td>` +
       `<td class="${pnlClass(pnl)}">${fmtSigned(pnl)}</td></tr>`;
   }).join("");
@@ -421,8 +421,8 @@ function renderTrades(trades) {
   body.innerHTML = rows.map((t) => {
     const pnl = t.pnl != null ? t.pnl : t.realized_pnl;
     return `<tr><td>${fmtWhen(t.time || t.created_at)}</td><td><strong>${t.symbol}</strong></td>` +
-      `<td class="${t.side === "buy" ? "positive" : "negative"}">${(t.side || "").toUpperCase()}</td>` +
-      `<td>${fmtQty(t.quantity)}</td><td>${fmtPrice(t.price)}</td>` +
+      `<td class="${t.side === "buy" ? "positive" : "negative}${(t.side || "").toUpperCase()}</td>` +
+    `<td>${fmtQty(t.qty)}</td><td>${fmtPrice(t.price)}</td>` +
       `<td class="${pnlClass(pnl)}">${fmtSigned(pnl)}</td><td>${t.reason || t.strategy || ""}</td></tr>`;
   }).join("");
 }
@@ -514,7 +514,7 @@ function updateOrderPreview() {
   let notional = null;
   let capped = false;
   if (!buy) {
-    shares = holding ? holding.quantity : 0;
+    shares = holding ? holding.qty : 0;
     notional = shares * price;
   } else if (state.sizeMode === "risk") {
     const riskDollars = Math.max(parseFloat(riskInput.value) || 0, 0);
@@ -649,9 +649,9 @@ async function runAutopilot() {
       lines.push("No actions — no symbol passed the 7/8 confluence gate.");
     } else {
       data.actions.forEach((a) => {
-        lines.push(`${(a.action || "").toUpperCase()} ${fmtQty(a.quantity)} ${a.symbol} @ ${fmtPrice(a.price)} — ${a.reason || ""}`);
+      lines.push(`${(a.side || "").toUpperCase()} ${fmtQty(a.qty)} ${a.symbol} @ ${fmtPrice(a.price)} - ${a.reason || ""}`);
       });
-    }
+      }
     out.textContent = lines.join("\n");
     out.hidden = false;
     status.textContent = `Last run ${fmtClock(new Date())} PT`;
