@@ -43,40 +43,43 @@ def fetch_ohlc(symbol, timeframe="1D"):
         "includePrePost": "false",
         "events": "div,split",
     }
-    r = requests.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}", params=params, headers=HEADERS, timeout=REQUEST_TIMEOUT)
-    r.raise_for_status()
-    res = r.json()["chart"]["result"][0]
-    ts = res["timestamp"]
-    q = res["indicators"]["quote"][0]
-    bars = [
-        {
-            "t": t * 1000,
-            "o": o,
-            "h": h,
-            "l": l,
-            "c": c,
-            "v": v or 0,
-        }
-        for t, o, h, l, c, v in zip(ts, q["open"], q["high"], q["low"], q["close"], q.get("volume") or [0] * len(ts))
-        if o is not None and c is not None
-    ]
-    if timeframe == "4H":
-        agg = []
-        for i in range(0, len(bars), 4):
-            chunk = bars[i:i + 4]
-            if len(chunk) < 4 and len(bars) - i < 2:
-                agg.extend(chunk)
-                continue
-            agg.append({
-                "t": chunk[0]["t"],
-                "o": chunk[0]["o"],
-                "h": max(c["h"] for c in chunk),
-                "l": min(c["l"] for c in chunk),
-                "c": chunk[-1]["c"],
-                "v": sum(c["v"] for c in chunk),
-            })
-        bars = agg
-    return bars
+    try:
+        r = requests.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}", params=params, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+        r.raise_for_status()
+        res = r.json()["chart"]["result"][0]
+        ts = res["timestamp"]
+        q = res["indicators"]["quote"][0]
+        bars = [
+            {
+                "t": t * 1000,
+                "o": o,
+                "h": h,
+                "l": l,
+                "c": c,
+                "v": v or 0,
+            }
+            for t, o, h, l, c, v in zip(ts, q["open"], q["high"], q["low"], q["close"], q.get("volume") or [0] * len(ts))
+            if o is not None and c is not None
+        ]
+        if timeframe == "4H":
+            agg = []
+            for i in range(0, len(bars), 4):
+                chunk = bars[i:i + 4]
+                if len(chunk) < 4 and len(bars) - i < 2:
+                    agg.extend(chunk)
+                    continue
+                agg.append({
+                    "t": chunk[0]["t"],
+                    "o": chunk[0]["o"],
+                    "h": max(c["h"] for c in chunk),
+                    "l": min(c["l"] for c in chunk),
+                    "c": chunk[-1]["c"],
+                    "v": sum(c["v"] for c in chunk),
+                })
+            bars = agg
+        return bars
+    except Exception:
+        return None
 
 
 def fetch_quote(symbol):
@@ -85,15 +88,9 @@ def fetch_quote(symbol):
     if not daily or len(daily) < 2:
         return None
     last, prev = daily[-1], daily[-2]
-    is_crypto = symbol.endswith("-USD")
-    if is_crypto:
-        price = last["c"]
-        chg = price - prev["c"]
-        chg_pct = (chg / prev["c"]) * 100 if prev["c"] else None
-    else:
-        price = last["c"]
-        chg = price - prev["c"]
-        chg_pct = (chg / prev["c"]) * 100 if prev["c"] else None
+    price = last["c"]
+    chg = price - prev["c"]
+    chg_pct = (chg / prev["c"]) * 100 if prev["c"] else None
     return {
         "symbol": symbol,
         "price": round(price, 6),
@@ -102,14 +99,26 @@ def fetch_quote(symbol):
     }
 
 
-def fetch_quotes(symbols):
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
+def fetch_quotes_parallel(symbols, max_workers=10):
+    """Fetch latest quotes for several symbols at once, in watchlist order."""
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as ex:
         return sorted(
             (q for q in ex.map(fetch_quote, symbols) if q),
             key=lambda q: WATCHLIST_SYMBOLS.index(q["symbol"]) if q["symbol"] in WATCHLIST_SYMBOLS else 99,
         )
 
 
-def fetch_daily(symbol):
+def fetch_daily(symbol, days=260):
     """Return daily OHLC bars used by the strategy engine."""
-    return fetch_ohlc(symbol, "1D")
+    bars = fetch_ohlc(symbol, "1D")
+    return bars[-days:] if bars else None
+
+
+def fetch_daily_parallel(symbols, days=260, max_workers=8):
+    """Fetch daily bars for several symbols at once, keyed by symbol."""
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(fetch_daily, s, days): s for s in symbols}
+        out = {}
+        for fut in concurrent.futures.as_completed(futures):
+            out[futures[fut]] = fut.result()
+        return out
