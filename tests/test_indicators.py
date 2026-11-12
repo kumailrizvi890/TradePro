@@ -52,12 +52,18 @@ class TestMacd(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertIn("macd", result)
         self.assertIn("signal", result)
-        self.assertIn("histogram", result)
+        self.assertIn("hist", result)
 
 
 class TestComputeSignal(unittest.TestCase):
     def test_trending_series_shape(self):
-        signal = indicators.compute_signal(_bars(120))
+        bars = _bars(120)
+        signal = indicators.compute_signal(
+            [b["h"] for b in bars],
+            [b["l"] for b in bars],
+            [b["c"] for b in bars],
+            [b["v"] for b in bars],
+        )
         self.assertIsNotNone(signal)
         self.assertIn("passed", signal)
         self.assertIn("total", signal)
