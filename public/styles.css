@@ -70,7 +70,9 @@ a { color: var(--green); text-decoration: none; }
 .badge.offline .dot { background: var(--red); box-shadow: 0 0 8px var(--red); }
 
 /* ---------- Hero ---------- */
-.hero { padding: 64px 0 8px; }
+/* Top and bottom only: the left and right padding comes from .wrap, and the
+   shorthand here used to zero it, leaving headings flush to the edge. */
+.hero { padding-top: 64px; padding-bottom: 8px; }
 .kicker { font: 700 11px var(--mono); letter-spacing: 0.18em; color: var(--green); text-transform: uppercase; }
 .hero h1 { font-size: clamp(38px, 5.2vw, 64px); line-height: 1.02; margin: 14px 0 16px; letter-spacing: -0.02em; }
 .hero h1 em { font-style: normal; color: var(--green); }
@@ -90,7 +92,8 @@ a { color: var(--green); text-decoration: none; }
 .data-status.error { color: var(--red); }
 
 /* ---------- Sections ---------- */
-.section { padding: 34px 0; }
+/* Top and bottom only, same as .hero: the side padding comes from .wrap. */
+.section { padding-top: 34px; padding-bottom: 34px; }
 .section-head { margin-bottom: 18px; }
 .section-head h2 { font-size: 30px; margin: 8px 0 6px; letter-spacing: -0.01em; }
 .section-head p { color: var(--ink-dim); max-width: 700px; margin: 0; }
@@ -240,4 +243,55 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
 @media (max-width: 400px) {
   .badge.paper { display: none; }
   .topbar-in { gap: 16px; }
+}
+
+/* Phones: the holdings and order log tables have seven columns each and the
+   watchlist has five, so even scrolling inside their panels hides the last
+   column. Restyle each row as a stacked label/value card instead, so every
+   column stays visible with nothing to swipe for. Desktop keeps the plain
+   table layout. */
+@media (max-width: 767px) {
+  .desk-side .data-table thead, #watchlist .data-table thead { display: none; }
+  .desk-side .data-table,
+  .desk-side .data-table tbody,
+  .desk-side .data-table tr,
+  .desk-side .data-table td,
+  #watchlist .data-table,
+  #watchlist .data-table tbody,
+  #watchlist .data-table tr,
+  #watchlist .data-table td { display: block; width: auto; }
+  .desk-side .data-table tr,
+  #watchlist .data-table tr {
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 4px 12px;
+    margin-bottom: 10px;
+    background: var(--panel-2);
+  }
+  .desk-side .data-table tr:last-child,
+  #watchlist .data-table tr:last-child { margin-bottom: 0; }
+  .desk-side .data-table td,
+  #watchlist .data-table td {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+    text-align: right;
+  }
+  .desk-side .data-table td:last-child,
+  #watchlist .data-table td:last-child { border-bottom: none; }
+  .desk-side .data-table td::before,
+  #watchlist .data-table td::before {
+    content: attr(data-label);
+    font: 700 10.5px var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-faint); flex: none;
+  }
+  .desk-side .data-table td.empty,
+  #watchlist .data-table td.empty { display: block; text-align: center; padding: 14px 0; }
+  .desk-side .data-table td.empty::before,
+  #watchlist .data-table td.empty::before { content: none; }
+  /* The watchlist group rows ("US Equities", "Crypto · 24/7") are section
+     labels, not data rows: keep them as full-width bars with no card border
+     and no label prefix. */
+  #watchlist .data-table tr.group-row { border: none; border-radius: 0; padding: 0; margin: 0 0 8px; background: none; }
+  #watchlist .data-table tr.group-row td { display: block; text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); }
+  #watchlist .data-table tr.group-row td::before { content: none; }
 }
