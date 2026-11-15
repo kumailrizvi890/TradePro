@@ -135,6 +135,13 @@ a { color: var(--green); text-decoration: none; }
 
 /* ---------- Trade desk ---------- */
 .desk { display: grid; grid-template-columns: 400px 1fr; gap: 16px; align-items: start; }
+/* Let the ticket and the side column shrink below their content width on
+   phones; without this, the wide holdings/order tables force the whole grid
+   (and the ticket inputs with it) wider than the viewport. */
+.desk > * { min-width: 0; }
+/* Tables are wider than a phone screen: scroll them inside their own panel
+   instead of letting them stretch the page. */
+.desk-side .panel, #watchlist .panel { overflow-x: auto; }
 .ticket { display: flex; flex-direction: column; gap: 14px; }
 .field-label { display: block; font: 700 10.5px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 6px; }
 select, input[type="number"] {
@@ -226,4 +233,11 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
   .topbar nav { display: none; }
   .clock { display: none; }
   .hero { padding-top: 40px; }
+}
+
+/* Small phones: the two topbar badges plus the brand don't fit side by side,
+   so drop the decorative PAPER SESSION pill before it can push the page wide. */
+@media (max-width: 400px) {
+  .badge.paper { display: none; }
+  .topbar-in { gap: 16px; }
 }
