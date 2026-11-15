@@ -330,8 +330,8 @@ async function loadWatchlist() {
       items.forEach((q) => {
         const trend = q.change_pct == null ? "—" : q.change_pct >= 0 ? "▲ Up" : "▼ Down";
         rows.push(`<tr class="watch-row ${q.symbol === state.focusSymbol ? "active" : ""}" data-symbol="${q.symbol}" tabindex="0" role="button" aria-label="Load ${q.symbol} on the chart">` +
-          `<td><strong>${q.symbol}</strong></td><td>${NAMES[q.symbol] || ""}</td><td>${fmtPrice(q.price)}</td>` +
-          `<td class="${pnlClass(q.change_pct)}">${fmtPct(q.change_pct)}</td><td class="${pnlClass(q.change_pct)}">${trend}</td></tr>`);
+          `<td data-label="Symbol"><strong>${q.symbol}</strong></td><td data-label="Name">${NAMES[q.symbol] || ""}</td><td data-label="Last">${fmtPrice(q.price)}</td>` +
+          `<td data-label="Chg %" class="${pnlClass(q.change_pct)}">${fmtPct(q.change_pct)}</td><td data-label="Trend" class="${pnlClass(q.change_pct)}">${trend}</td></tr>`);
       });
     };
     renderGroup("US Equities", data.equities);
@@ -404,9 +404,9 @@ function renderPositions(positions) {
   }
   body.innerHTML = positions.map((p) => {
     const pnl = p.mark_price != null ? (p.mark_price - p.entry_price) * p.qty : null;
-    return `<tr><td><strong>${p.symbol}</strong></td><td>${fmtQty(p.qty)}</td><td>${fmtPrice(p.entry_price)}</td>` +
-      `<td>${fmtPrice(p.mark_price)}</td><td>${fmtPrice(p.stop_loss)}</td><td>${fmtPrice(p.take_profit)}</td>` +
-      `<td class="${pnlClass(pnl)}">${fmtSigned(pnl)}</td></tr>`;
+    return `<tr><td data-label="Symbol"><strong>${p.symbol}</strong></td><td data-label="Qty">${fmtQty(p.qty)}</td><td data-label="Entry">${fmtPrice(p.entry_price)}</td>` +
+      `<td data-label="Mark">${fmtPrice(p.mark_price)}</td><td data-label="Stop">${fmtPrice(p.stop_loss)}</td><td data-label="Target">${fmtPrice(p.take_profit)}</td>` +
+      `<td data-label="P&L" class="${pnlClass(pnl)}">${fmtSigned(pnl)}</td></tr>`;
   }).join("");
 }
 
@@ -420,10 +420,10 @@ function renderTrades(trades) {
   }
   body.innerHTML = rows.map((t) => {
     const pnl = t.pnl != null ? t.pnl : t.realized_pnl;
-    return `<tr><td>${fmtWhen(t.time || t.created_at)}</td><td><strong>${t.symbol}</strong></td>` +
-      `<td class="${t.side === "buy" ? "positive" : "negative"}">${(t.side || "").toUpperCase()}</td>` +
-    `<td>${fmtQty(t.qty)}</td><td>${fmtPrice(t.price)}</td>` +
-      `<td class="${pnlClass(pnl)}">${fmtSigned(pnl)}</td><td>${t.reason || t.strategy || ""}</td></tr>`;
+    return `<tr><td data-label="When">${fmtWhen(t.time || t.created_at)}</td><td data-label="Symbol"><strong>${t.symbol}</strong></td>` +
+      `<td data-label="Side" class="${t.side === "buy" ? "positive" : "negative"}">${(t.side || "").toUpperCase()}</td>` +
+    `<td data-label="Qty">${fmtQty(t.qty)}</td><td data-label="Price">${fmtPrice(t.price)}</td>` +
+      `<td data-label="P&L" class="${pnlClass(pnl)}">${fmtSigned(pnl)}</td><td data-label="Strategy">${t.reason || t.strategy || ""}</td></tr>`;
   }).join("");
 }
 
