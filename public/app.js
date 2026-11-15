@@ -385,8 +385,6 @@ async function loadState() {
     renderPositions(data.positions || []);
     renderTrades(data.trades || []);
     drawEquityCurve(data.trades || [], data.starting_cash || 100000, data.equity);
-    const tag = el("build-tag");
-    if (tag) tag.textContent = `build main · last autopilot run ${data.last_run ? fmtWhen(data.last_run) : "—"}`;
     setStatus(`Live data · updated ${fmtClock(new Date())} PT`);
     updateOrderPreview();
     updateRiskExample();
