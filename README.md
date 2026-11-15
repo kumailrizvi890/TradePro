@@ -34,3 +34,5 @@ Deploy the repository on Vercel (the included `vercel.json` wires up the Flask b
 ## Status
 
 Working demo: charting, confluence scoring, manual orders, and SMA-crossover paper trading are implemented. This is a paper-trading demo, not a live brokerage integration.
+
+Nov 15 mobile tables fix: Holdings, Order log, and Watchlist now render as stacked label-value cards on phones.
